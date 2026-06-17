@@ -83,8 +83,10 @@ const registrationFormTemplate = `
 
     <select id="player-branch">
       <option value="">اختر الفرع *</option>
-      <option value="سموحه">سموحه</option> 
-      <option value="المندرة">المندرة</option> 
+      <option value="المقطم">المقطم</option> 
+      <option value="الجيزة">الجيزة</option> 
+      <option value="عزبة النخل">عزبة النخل</option> 
+      <option value="العاشر من رمضان">العاشر من رمضان</option> 
     </select>
 
     <div class="swal-phone-group" style="display: flex; gap: 8px; direction: ltr; grid-column: span 1;">
