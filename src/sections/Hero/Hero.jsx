@@ -25,6 +25,7 @@ const positionsList = [
   "رأس حربة (ST)",
 ];
 
+// القالب المحدث ليتضمن حقل اختيار كود الدولة مع حقل رقم الهاتف وتنسيق اللائحة الدولية
 const registrationFormTemplate = `
 <div class="swal-player-form">
 
@@ -86,10 +87,33 @@ const registrationFormTemplate = `
       <option value="المندرة">المندرة</option> 
     </select>
 
-    <input
-      id="parent-phone"
-      placeholder="رقم الهاتف *"
-    />
+    <div class="swal-phone-group" style="display: flex; gap: 8px; direction: ltr; grid-column: span 1;">
+      <select id="player-country" class="form-select" style="width: 110px; font-size: 13px; border: 1px solid #ccc; border-radius: 6px; padding: 0 4px; background-color: #fff;">
+        <option value="+20" selected>🇪🇬 +20</option>
+        <option value="+966">🇸🇦 +966</option>
+        <option value="+971">🇦🇪 +971</option>
+        <option value="+965">🇰🇼 +965</option>
+        <option value="+973">🇧🇭 +973</option>
+        <option value="+974">🇶🇦 +974</option>
+        <option value="+968">🇴🇲 +968</option>
+        <option value="+962">🇯🇴 +962</option>
+        <option value="+961">🇱🇧 +961</option>
+        <option value="+964">🇮🇶 +964</option>
+        <option value="+970">🇵🇸 +970</option>
+        <option value="+218">🇱🇾 +218</option>
+        <option value="+216">🇹🇳 +216</option>
+        <option value="+213">🇩🇿 +213</option>
+        <option value="+212">🇲🇦 +212</option>
+        <option value="+249">🇸🇩 +249</option>
+        <option value="+967">🇾🇪 +967</option>
+      </select>
+      <input
+        id="parent-phone"
+        placeholder="رقم الهاتف *"
+        type="tel"
+        style="flex: 1; margin: 0; text-align: right;"
+      />
+    </div>
 
     <textarea
       id="medical-notes"
@@ -211,12 +235,6 @@ export default function HeroSection() {
           <p className="mb-4">{t("hero.desc")}</p>
 
           <div className="d-flex justify-content-center gap-3 flex-wrap">
-            {/* <button
-              className="btn btn-primary px-4 join-btn"
-              onClick={() => handleJoin({ type: "info", plan: t("hero.plan") })}
-            >
-              {t("hero.join")}
-            </button> */}
             <button
               className="btn btn-outline-light px-4"
               onClick={async () => {
@@ -253,11 +271,9 @@ export default function HeroSection() {
                 const result = await Swal.fire({
                   title: "طلب انضمام لاعب",
                   html: registrationFormTemplate,
-
                   showCancelButton: true,
                   confirmButtonText: "إرسال الطلب",
                   cancelButtonText: "إلغاء",
-
                   scrollbarPadding: false,
 
                   didOpen: () => {
@@ -273,7 +289,7 @@ export default function HeroSection() {
                       ?.addEventListener(
                         "change",
                         handleImageChange
-                      );  
+                      );    
                     
                     const birthDateInput = document.getElementById("birth-date");
                     if (birthDateInput) {
@@ -307,47 +323,31 @@ export default function HeroSection() {
                   },
 
                   preConfirm: () => {
-                    const playerName =
-                      document.getElementById(
-                        "player-name"
-                      )?.value;
+                    const playerName = document.getElementById("player-name")?.value.trim();
+                    const birthDate = document.getElementById("birth-date")?.value;
+                    const position = document.getElementById("player-position")?.value;
+                    const branch = document.getElementById("player-branch")?.value;  
+                    const countryCode = document.getElementById("player-country")?.value || "";
+                    let phone = document.getElementById("parent-phone")?.value.trim();
+                    const medicalNotes = document.getElementById("medical-notes")?.value;
 
-                    const birthDate =
-                      document.getElementById(
-                        "birth-date"
-                      )?.value;
-
-                    const position =
-                      document.getElementById(
-                        "player-position"
-                      )?.value;
-
-                    const branch =
-                      document.getElementById(
-                        "player-branch"
-                      )?.value;  
-
-                    const phone =
-                      document.getElementById(
-                        "parent-phone"
-                      )?.value;
-
-                    const medicalNotes =
-                      document.getElementById(
-                        "medical-notes"
-                      )?.value;
-
-                    if (
-                      !playerName ||
-                      !birthDate ||
-                      !position ||
-                      !branch ||
-                      !phone
-                    ) {
-                      return Swal.showValidationMessage(
-                        "أكمل الحقول المطلوبة"
-                      );
+                    if (!playerName || !birthDate || !position || !branch || !phone) {
+                      return Swal.showValidationMessage("أكمل الحقول المطلوبة");
                     }
+
+                    // تنظيف رقم الهاتف المدخل من أي حروف أو رموز
+                    phone = phone.replace(/\D/g, "");
+                    if (!phone) {
+                      return Swal.showValidationMessage("يرجى إدخال رقم هاتف صحيح.");
+                    }
+
+                    // إزالة الصفر الافتتاحي إن وجد من الرقم لتجنب التكرار مع كود الدولة
+                    if (phone.startsWith("0")) {
+                      phone = phone.substring(1);
+                    }
+
+                    // الدمج الدولي النهائي الكامل والآمن وقبوله كمتغير واحد
+                    phone = `${countryCode}${phone}`;
 
                     return {
                       playerName,
@@ -372,12 +372,11 @@ export default function HeroSection() {
                   let imageUrl = null;
 
                   if (imageFile) {
-                    // 🚀 تم تغيير المسار ليتم رفعه داخل باكت الـ avatars في مجلد requests للتنظيم
                     const filePath = `requests/${Date.now()}.jpg`;
 
                     const { error: uploadError } =
                       await supabase.storage
-                        .from("avatars") // اسم الباكت الجديد الموحد
+                        .from("avatars") 
                         .upload(
                           filePath,
                           imageFile
@@ -402,36 +401,15 @@ export default function HeroSection() {
                       )
                       .insert([
                         {
-                          academy_id:
-                            ACADEMY_ID,
-
-                          player_name:
-                            result.value
-                              .playerName,
-
-                          birth_date:
-                            result.value
-                              .birthDate,
-
-                          position:
-                            result.value
-                              .position,
-                          
+                          academy_id: ACADEMY_ID,
+                          player_name: result.value.playerName,
+                          birth_date: result.value.birthDate,
+                          position: result.value.position,
                           branch: result.value.branch,
-
-                          parent_phone:
-                            result.value
-                              .phone,
-
-                          medical_notes:
-                            result.value
-                              .medicalNotes,
-
-                          player_image:
-                            imageUrl,
-
-                          status:
-                            "pending",
+                          parent_phone: result.value.phone, // يُحفظ هنا بالصيغة الدولية الصافية
+                          medical_notes: result.value.medicalNotes,
+                          player_image: imageUrl,
+                          status: "pending",
                         },
                       ]);
 
@@ -439,16 +417,15 @@ export default function HeroSection() {
 
                   Swal.fire({
                     icon: "success",
-                    title:
-                      "تم إرسال الطلب بنجاح",
-                    text:
-                      "سيتم مراجعة البيانات والتواصل معكم قريباً",
+                    title: "تم إرسال الطلب بنجاح",
+                    text: "سيتم مراجعة البيانات والتواصل معكم قريباً",
                   });
                 } catch (err) {
                   Swal.fire({
                     icon: "error",
                     title: "حدث خطأ",
                     text: err.message,
+                    scrollbarPadding: false,
                   });
                 }
               }}
@@ -482,7 +459,6 @@ export default function HeroSection() {
         </div>
       </section>    
     </>
-
   );
 }
 
